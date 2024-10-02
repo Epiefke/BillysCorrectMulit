@@ -50,9 +50,7 @@ void AMGCharacter::Multi_OnTriggerChanged_Implementation(const bool pullOrReleas
 
 void AMGCharacter::Server_OnTriggerChanged_Implementation(const bool pullOrRelease)
 {
-	// set is holding trigger boolean to the parameter
-    	bIsHoldingTrigger = pullOrRelease;
-    	OnTriggerChanged(bIsHoldingTrigger);
+	Multi_OnTriggerChanged(pullOrRelease);
 }
 
 
