@@ -18,6 +18,25 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Movement")
 	void PMoveCharacter(FVector2D Axis);
 
+	UFUNCTION(BlueprintPure, Category="Shooting")
+	bool IsHoldingTrigger() const { return bIsHoldingTrigger; }
+
+	UFUNCTION(BlueprintCallable, Category="Shooting")
+	void HoldTrigger(bool pullOrRelease);
+
+	UFUNCTION(BlueprintImplementableEvent, Category="Shooting")
+	void OnTriggerChanged(bool pullOrRelease);
+
+	UFUNCTION(Server, Reliable, Category="Shooting")
+	void Server_OnTriggerChanged(const bool pullOrRelease);
+
+	UFUNCTION(NetMulticast, Reliable, Category="Shooting")
+	void Multi_OnTriggerChanged(const bool pullOrRelease);
+
+	
+private:
+	// returns if the player is holding down the trigger
+	bool bIsHoldingTrigger;
 	
 	
 };
