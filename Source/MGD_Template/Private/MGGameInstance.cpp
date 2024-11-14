@@ -3,6 +3,8 @@
 
 #include "MGGameInstance.h"
 #include "OnlineSubsystemUtils.h"
+#include "OnlineSessionSettings.h"
+
 
 void UMGGameInstance::Init()
 {
@@ -30,6 +32,17 @@ void UMGGameInstance::Init()
 
 	// bind to the login complete delegate in the identity interface
 	IdentityInterface->OnLoginCompleteDelegates->AddUObject(this, &UMGGameInstance::OnLoginComplete);
+
+	// store the session interface from the oss
+	SessionInterface = OssRef->GetSessionInterface();
+
+	// check if the session interface was found, error if not
+	if (!SessionInterface)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Session interface not found"))
+		return;
+	}
+
 	
 }
 
@@ -63,7 +76,60 @@ bool UMGGameInstance::IsLoggedIn() const
  		return IdentityInterface->GetLoginStatus(0) == ELoginStatus::LoggedIn;
 }
 
+bool UMGGameInstance::HostGame()
+{
+	//check if we are logged in
+	if (!IsLoggedIn())
+	{
+		UE_LOG(LogTemp, Error, TEXT("Cannot host game, must log in first"))
+		return false;
+	}
+
+	if (!SessionInterface)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Cannot host game, no session interface found"))
+		return false;
+	}
+
+	FOnlineSearchSettings sessionSettings;
+
+	sessionSettings.bAllowInvites = true;
+	sessionSettings.bIsDedicated = false;
+	sessionSettings.bUsesPresence = true;
+	sessionSettings.NumPrivateConnections = 4;
+	sessionSettings.bUseLobbiesIfAvalible = true;
+	sessionSettings.bIsLANMatch = false;
+
+	if (SessionInterface->CreateSession(0, TEXT("MGSESSION"), sessionSettings))
+	{
+		UE_LOG(LogTemp, Error, TEXT("Cannot host game, create session failed"))
+		return false;
+	}
+	return true;
+}
+
+
+
 void UMGGameInstance::OnLoginComplete(int32 localUserNum, bool bWasSuccessful, const FUniqueNetId& UserId, const FString& Error)
  {
 	 BIEOnLoginComplete(bWasSuccessful, Error);
  }
+
+void UMGGameInstance::OnCreateSessionComplete(FName sessionName, bool success, const IOnlineSubsystem* OssRef)
+{
+	if (!success)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to create session"))
+		Delegate_OnHostGame.Broadcast(false);
+		return;
+	}
+	if (!EnableListenServer(true))
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to create listen server"))
+		Delegate_OnHostGame.Broadcast(false);
+		return;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Successfully hosted session!"))
+	Delegate_OnHostGame.Broadcast(true);
+}
