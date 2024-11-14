@@ -22,7 +22,10 @@ public:
 	virtual void Init() override;
 	
 	UFUNCTION(BlueprintCallable, Category=Login)
-	void LoginToEOS(); 
+	void LoginToEOS();
+
+	UFUNCTION(BlueprintPure, Category=Login)
+	bool IsLoggedIn() const;
 
 protected:
 	UFUNCTION(BlueprintImplementableEvent, Category=Login)
