@@ -51,6 +51,14 @@ void AMGPickup::NotifyActorBeginOverlap(AActor* OtherActor)
 	{
 		return;
 	}	
+
+	for (TSubclassOf<AActor>& item : IgnoreActorClass)
+	{
+		if (OtherActor->GetClass() == item)
+		{
+			return;
+		}
+	}
 	
 	if (OtherActor->GetClass()->IsChildOf(PickupActorClass))
 	{
@@ -72,11 +80,11 @@ void AMGPickup::ActivatePickup(AActor* pickupActor)
 	DeactivatePickup();
 
 	//checking if the reset time is greater than 0
-	if (ResetTime>0.0f)
-	{
+	//if (ResetTime>0.0f)
+	//{
 		//if so, set a timer to reactivate the pickup
-		GetWorld()->GetTimerManager().SetTimer(TH_ReactivateTimer, this, &AMGPickup::ReactivatePickup, ResetTime);
-	}	
+		//GetWorld()->GetTimerManager().SetTimer(TH_ReactivateTimer, this, &AMGPickup::ReactivatePickup, ResetTime);
+	//}	
 }
 
 void AMGPickup::ReactivatePickup_Implementation()

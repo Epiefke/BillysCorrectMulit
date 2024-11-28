@@ -32,6 +32,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category=Session)
 	bool HostGame();
 
+	UFUNCTION(BlueprintCallable, Category=Session)
+	void StartGame();
+	
 	UPROPERTY(BluePrintAssignable,Category=Session)
 	FOnHostGame Delegate_OnHostGame;
 	
@@ -42,11 +45,15 @@ protected:
 	// the login function that will run when the onlogincomplete delegates is run
 	void OnLoginComplete(int32 localUserNum, bool bWasSuccessful, const FUniqueNetId& UserId, const FString& Error);
 
-	// the function that will run when
+	// the function that will run when the create session complete delegate is called
 	void OnCreateSessionComplete(FName sessionName, bool success);
 
-	//void OnAcceptSessionInvite
+	// the function that will run when the user has accepted an invite
+	void OnAcceptSessionInvite(const bool bWasSuccessful, const int32 ControllerId, FUniqueNetIdPtr UserId, const FOnlineSessionSearchResult& InviteResult);
 
+	// the function that will run when a join session completes
+	void OnJoinSessionComplete(FName sessionName, EOnJoinSessionCompleteResult::Type result);
+	
 	//this will store a reference to the online subsystem
 	const IOnlineSubsystem* OssRef;
 

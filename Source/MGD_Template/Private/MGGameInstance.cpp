@@ -4,6 +4,7 @@
 #include "MGGameInstance.h"
 #include "OnlineSubsystemUtils.h"
 #include "OnlineSessionSettings.h"
+#include "GameFramework/GameModeBase.h"
 
 
 void UMGGameInstance::Init()
@@ -43,7 +44,14 @@ void UMGGameInstance::Init()
 		return;
 	}
 
-	
+	// bind to on create session complete
+	SessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &UMGGameInstance::OnCreateSessionComplete);
+
+	// bind to on inviter accepted
+	SessionInterface->OnSessionUserInviteAcceptedDelegates.AddUObject(this, &UMGGameInstance::OnAcceptSessionInvite);
+
+	// bind to on join session complete
+	SessionInterface->OnJoinSessionCompleteDelegates.AddUObject(this, &UMGGameInstance::OnJoinSessionComplete);
 }
 
 void UMGGameInstance::LoginToEOS()
@@ -64,8 +72,6 @@ void UMGGameInstance::LoginToEOS()
 	}
 
 	UE_LOG(LogTemp,Warning, TEXT("Attempting to login..."))
-
-
 	
 }
 
@@ -73,7 +79,9 @@ bool UMGGameInstance::IsLoggedIn() const
 {
 	if (!IdentityInterface)
  			return false;
- 		return IdentityInterface->GetLoginStatus(0) == ELoginStatus::LoggedIn;
+
+	// return true if login status is logged in
+	return IdentityInterface->GetLoginStatus(0) == ELoginStatus::LoggedIn;
 }
 
 bool UMGGameInstance::HostGame()
@@ -91,13 +99,13 @@ bool UMGGameInstance::HostGame()
 		return false;
 	}
 
-	FOnlineSearchSettings sessionSettings;
-
+	FOnlineSessionSettings sessionSettings;
+	
 	sessionSettings.bAllowInvites = true;
 	sessionSettings.bIsDedicated = false;
 	sessionSettings.bUsesPresence = true;
 	sessionSettings.NumPrivateConnections = 4;
-	sessionSettings.bUseLobbiesIfAvalible = true;
+	sessionSettings.bUseLobbiesIfAvailable = true;
 	sessionSettings.bIsLANMatch = false;
 
 	if (SessionInterface->CreateSession(0, TEXT("MGSESSION"), sessionSettings))
@@ -108,6 +116,22 @@ bool UMGGameInstance::HostGame()
 	return true;
 }
 
+void UMGGameInstance::StartGame()
+{
+	if (!IsLoggedIn())
+		return;
+
+	if (!SessionInterface)
+		return;
+
+	if (SessionInterface->GetSessionState(TEXT("MGSESSION")) == EOnlineSessionState::NoSession)
+		return;
+
+	GetWorld()->GetAuthGameMode()->bUseSeamlessTravel = true;
+
+	// "/Game/MyContent/Maps/Lvl_Test?listen?GameMode=?Script/MGD_Template.GM_Battle"
+	GetWorld()->ServerTravel("/Game/MyContent/Maps/Lvl_Gameplay?listen?GameMode=?Script?MGD_Template.GM_SpookyMaze");
+}
 
 
 void UMGGameInstance::OnLoginComplete(int32 localUserNum, bool bWasSuccessful, const FUniqueNetId& UserId, const FString& Error)
@@ -115,7 +139,7 @@ void UMGGameInstance::OnLoginComplete(int32 localUserNum, bool bWasSuccessful, c
 	 BIEOnLoginComplete(bWasSuccessful, Error);
  }
 
-void UMGGameInstance::OnCreateSessionComplete(FName sessionName, bool success, const IOnlineSubsystem* OssRef)
+void UMGGameInstance::OnCreateSessionComplete(FName sessionName, bool success)
 {
 	if (!success)
 	{
@@ -126,10 +150,49 @@ void UMGGameInstance::OnCreateSessionComplete(FName sessionName, bool success, c
 	if (!EnableListenServer(true))
 	{
 		UE_LOG(LogTemp, Error, TEXT("Failed to create listen server"))
-		Delegate_OnHostGame.Broadcast(false);
+        		Delegate_OnHostGame.Broadcast(false);
+        		return;
+	}
+        
+	UE_LOG(LogTemp, Warning, TEXT("Successfully hosted session!"))
+	Delegate_OnHostGame.Broadcast(true);
+}
+
+	// void UMGGameInstance::OnCreateSessionComplete(FName sessionName, bool success, const IOnlineSubsystem* OssRef);
+
+void UMGGameInstance::OnAcceptSessionInvite(const bool bWasSuccessful, const int32 ControllerId, FUniqueNetIdPtr UserId,
+	const FOnlineSessionSearchResult& InviteResult)
+{
+		if (!bWasSuccessful)
+    	{
+    		UE_LOG(LogTemp, Error, TEXT("Could not accept session invite"))
+    		return;
+    	}
+    
+    	if (!SessionInterface)
+    	{
+    		UE_LOG(LogTemp, Error, TEXT("Could not accept session invite, no session interface"))
+    		return;
+    	}
+    
+    	// join the session
+    	if (SessionInterface->JoinSession(0, TEXT("MGSESSION"), InviteResult))
+    	{
+    		UE_LOG(LogTemp, Error, TEXT("Could not join session"))
+    		return;
+    	}
+    
+    	UE_LOG(LogTemp, Warning, TEXT("Attempting to join session"))
+}
+
+void UMGGameInstance::OnJoinSessionComplete(FName sessionName, EOnJoinSessionCompleteResult::Type result)
+{
+	if (result != EOnJoinSessionCompleteResult::Success)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to join session"))
 		return;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("Successfully hosted session!"))
-	Delegate_OnHostGame.Broadcast(true);
+	ClientTravelToSession(0, sessionName);
+	UE_LOG(LogTemp, Warning, TEXT("Successfully joined and travelling to session"))
 }
