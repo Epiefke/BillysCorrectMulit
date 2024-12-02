@@ -7,6 +7,13 @@
 #include "GameFramework/GameModeBase.h"
 
 
+UMGGameInstance::UMGGameInstance()
+{
+	GameHasStarted = false;
+	OssRef = nullptr;
+	
+}
+
 void UMGGameInstance::Init()
 {
 	Super::Init();
@@ -124,6 +131,8 @@ void UMGGameInstance::StartGame()
 	if (!SessionInterface)
 		return;
 
+	GameHasStarted = true;
+
 	if (SessionInterface->GetSessionState(TEXT("MGSESSION")) == EOnlineSessionState::NoSession)
 		return;
 
@@ -133,6 +142,51 @@ void UMGGameInstance::StartGame()
 	GetWorld()->ServerTravel("/Game/MyContent/Maps/Lvl_Gameplay?listen?GameMode=?Script?MGD_Template.GM_SpookyMaze");
 }
 
+void UMGGameInstance::TravelToLobby()
+{
+	if (!IsLoggedIn())
+		return;
+
+	if (!SessionInterface)
+		return;
+
+	GameHasStarted = false;
+
+	if (SessionInterface->GetSessionState(TEXT("MGSESSION")) == EOnlineSessionState::NoSession)
+		return;
+
+	GetWorld()->GetAuthGameMode()->bUseSeamlessTravel = true;
+
+	// "/Game/MyContent/Maps/Lvl_Test?listen?GameMode=?Script/MGD_Template.GM_Battle"
+	GetWorld()->ServerTravel("/Game/MyContent/Maps/Lvl_Lobby?listen?GameMode=?Script?MGD_Template.GM_Lobby");
+}
+
+void UMGGameInstance::TravelToGhostWin()
+{
+	if (!IsLoggedIn())
+		return;
+
+	if (!SessionInterface)
+		return;
+	
+	GameHasStarted = false;
+
+	if (SessionInterface->GetSessionState(TEXT("MGSESSION")) == EOnlineSessionState::NoSession)
+		return;
+
+	GetWorld()->GetAuthGameMode()->bUseSeamlessTravel = true;
+
+	// "/Game/MyContent/Maps/Lvl_Test?listen?GameMode=?Script/MGD_Template.GM_Battle"
+	GetWorld()->ServerTravel("/Game/MyContent/Maps/Lvl_GhostWins?listen?GameMode=?Script?MGD_Template.GM_Lobby");
+}
+
+bool UMGGameInstance::IsInSession() const
+{
+	if (!SessionInterface)
+ 		return false;
+ 
+ 	return SessionInterface->GetSessionState(TEXT("MGSESSION")) != EOnlineSessionState::NoSession;
+}
 
 void UMGGameInstance::OnLoginComplete(int32 localUserNum, bool bWasSuccessful, const FUniqueNetId& UserId, const FString& Error)
  {

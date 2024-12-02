@@ -21,6 +21,8 @@ class MGD_TEMPLATE_API UMGGameInstance : public UGameInstance
 	GENERATED_BODY()
 
 public:
+	UMGGameInstance();
+	
 	virtual void Init() override;
 	
 	UFUNCTION(BlueprintCallable, Category=Login)
@@ -34,9 +36,21 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category=Session)
 	void StartGame();
+
+	UFUNCTION(BlueprintCallable, Category=Lobby)
+	void TravelToLobby();
+
+	UFUNCTION(BlueprintCallable, Category=Lobby)
+	void TravelToGhostWin();
+
+	UFUNCTION(BlueprintPure, Category=Session)
+	bool IsInSession() const;
 	
 	UPROPERTY(BluePrintAssignable,Category=Session)
 	FOnHostGame Delegate_OnHostGame;
+
+	UPROPERTY(BlueprintReadOnly, Category=Game)
+	bool GameHasStarted;
 	
 protected:
 	UFUNCTION(BlueprintImplementableEvent, Category=Login)
