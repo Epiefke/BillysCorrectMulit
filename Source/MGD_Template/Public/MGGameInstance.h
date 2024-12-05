@@ -43,6 +43,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category=Lobby)
 	void TravelToGhostWin();
 
+	UFUNCTION(BlueprintCallable, Category=Lobby)
+	void TravelToHumansWin();
+
 	UFUNCTION(BlueprintPure, Category=Session)
 	bool IsInSession() const;
 	

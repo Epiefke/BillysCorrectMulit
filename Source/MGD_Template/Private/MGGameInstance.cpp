@@ -180,6 +180,25 @@ void UMGGameInstance::TravelToGhostWin()
 	GetWorld()->ServerTravel("/Game/MyContent/Maps/Lvl_GhostWins?listen?GameMode=?Script?MGD_Template.GM_Lobby");
 }
 
+void UMGGameInstance::TravelToHumansWin()
+{
+	if (!IsLoggedIn())
+		return;
+
+	if (!SessionInterface)
+		return;
+	
+	GameHasStarted = false;
+
+	if (SessionInterface->GetSessionState(TEXT("MGSESSION")) == EOnlineSessionState::NoSession)
+		return;
+
+	GetWorld()->GetAuthGameMode()->bUseSeamlessTravel = true;
+
+	// "/Game/MyContent/Maps/Lvl_Test?listen?GameMode=?Script/MGD_Template.GM_Battle"
+	GetWorld()->ServerTravel("/Game/MyContent/Maps/Lvl_HumansWin?listen?GameMode=?Script?MGD_Template.GM_Lobby");
+}
+
 bool UMGGameInstance::IsInSession() const
 {
 	if (!SessionInterface)
